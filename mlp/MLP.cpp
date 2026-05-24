@@ -10,44 +10,72 @@ MLP::MLP(const std::vector<int> &topology, const double lr) : learningRate(lr) {
     }
 }
 
-std::vector<float> MLP::feedForward(const std::vector<float> &input) {
-    std::vector<float> currentInput = input;
-    for (auto& layer : layers) {
-        layer.forward(currentInput);
-        currentInput = layer.output;
+std::vector<float> MLP::forward(const std::vector<float>& input)
+{
+    std::vector<float> current = input;
+
+    for (auto& layer : layers)
+    {
+        layer.forward(current);
+        current = layer.output;
     }
-    return currentInput;
+
+    lastOutput = current;
+    return current;
 }
 
-void MLP::backpropagate(const std::vector<float>& target) {
-    Layer& outputLayer = layers.back();
-    for (unsigned int i = 0; i < outputLayer.output.size(); ++i) {
-        const float error = target[i] - outputLayer.output[i];
-        outputLayer.deltas[i] = error * Layer::sigmoidDerivative(outputLayer.output[i]);
+void MLP::backward(const std::vector<float>& target)
+{
+    int L = layers.size();
+
+    // output layer error
+    for (int i = 0; i < layers[L - 1].output.size(); i++)
+    {
+        float out = layers[L - 1].output[i];
+        layers[L - 1].deltas[i] =
+            (out - target[i]) * Layer::sigmoidDerivative(out);
     }
 
-    for (int i = layers.size() - 2; i >= 0; --i) {
-        Layer& current = layers[i];
-        Layer& next = layers[i + 1];
+    // hidden layers
+    for (int l = L - 2; l >= 0; l--)
+    {
+        for (int i = 0; i < layers[l].output.size(); i++)
+        {
+            float error = 0.0f;
 
-        for (int j = 0; j < current.output.size(); ++j) {
-            float error = 0.0;
-            for (int k = 0; k < next.output.size(); ++k) {
-                error += next.deltas[k] * next.weights[k][j];
+            for (int j = 0; j < layers[l + 1].output.size(); j++)
+            {
+                error += layers[l + 1].weights[j][i] *
+                         layers[l + 1].deltas[j];
             }
-            current.deltas[j] = error * Layer::sigmoidDerivative(current.output[j]);
-        }
-    }
-    for (auto& layer : layers) {
-        for (int i = 0; i < layer.weights.size(); ++i) {
-                for (int j = 0; j < layer.weights[i].size(); ++j) {
-                    layer.weights[i][j] += learningRate * layer.deltas[i] * layer.lastInput[j];
-                }
-            layer.biases[i] += learningRate * layer.deltas[i];
+
+            float out = layers[l].output[i];
+            layers[l].deltas[i] =
+                error * Layer::sigmoidDerivative(out);
         }
     }
 }
+void MLP::update(float lr)
+{
+    for (int l = 0; l < layers.size(); l++)
+    {
+        auto& layer = layers[l];
 
+        std::vector<float> input =
+            (l == 0) ? layer.lastInput : layers[l - 1].output;
+
+        for (int i = 0; i < layer.weights.size(); i++)
+        {
+            for (int j = 0; j < layer.weights[i].size(); j++)
+            {
+                layer.weights[i][j] -=
+                    lr * layer.deltas[i] * input[j];
+            }
+
+            layer.biases[i] -= lr * layer.deltas[i];
+        }
+    }
+}
 void MLP::train(const std::vector<std::vector<float>>& inputs,
                       const std::vector<std::vector<float>>& targets,
                       const int epochs) {
