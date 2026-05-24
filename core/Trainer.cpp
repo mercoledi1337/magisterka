@@ -4,10 +4,9 @@
 
 void Trainer::train(Model& model, Dataset& data)
 {
-    for (auto& sample : data.data)
-    {
-        auto pred = model.forward(sample.x);
-        model.backward(sample.y);
-        model.update(0.01f);
-    }
+    for each epoch:
+    for each sample:
+        model.forward()
+        model.backward()
+        model.update()
 }

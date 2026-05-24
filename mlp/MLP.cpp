@@ -1,6 +1,4 @@
 #include "MLP.h"
-#include <fstream>
-#include <iostream>
 #include <ostream>
 
 
@@ -76,71 +74,6 @@ void MLP::update(float lr)
         }
     }
 }
-void MLP::train(const std::vector<std::vector<float>>& inputs,
-                      const std::vector<std::vector<float>>& targets,
-                      const int epochs) {
-    for (int e = 0; e < epochs; ++e) {
-        float totalError = 0.0;
 
-        for (size_t i = 0; i < inputs.size(); ++i) {
-            std::vector<float> prediction = feedForward(inputs[i]);
 
-            for (size_t j = 0; j < targets[i].size(); ++j) {
-                totalError += std::pow(targets[i][j] - prediction[j], 2);
-            }
 
-            backpropagate(targets[i]);
-        }
-        if (e % 100 == 0) {
-            std::cout << "Epoch: " << e << "/ mean erros" << totalError / inputs.size() << std::endl;
-        }
-    }
-}
-
-void MLP::saveWeights(std::string filename) {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-        std::cout << "Can't open file" << std::endl;
-        return;
-    }
-
-    for (auto &layer : layers) {
-        for (const auto &neuronWeights : layer.weights) {
-            for (float w : neuronWeights) {
-                file << w << " ";
-            }
-            file << "\n";
-        }
-        for (float b : layer.biases) {
-            file << b << " ";
-        }
-        file << "\n";
-    }
-
-    file.close();
-    std::cout << "Saved weights to " << filename << std::endl;
-};
-
-void MLP::loadWeights(std::string filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Blad: Nie mozna otworzyc pliku " << filename << " do odczytu!" << std::endl;
-        return;
-    }
-
-    for (auto &layer : layers) {
-
-        for (auto &neuronWeights : layer.weights) {
-            for (float &w : neuronWeights) {
-                if (!(file >> w)) break;
-            }
-        }
-
-        for (float &b : layer.biases) {
-            if (!(file >> b)) break;
-        }
-    }
-
-    file.close();
-    std::cout << "--- Wagi wczytane pomyslnie z pliku: " << filename << " ---" << std::endl;
-}

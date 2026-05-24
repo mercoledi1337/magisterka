@@ -12,7 +12,7 @@ struct Batch {
 class Trainer {
 public:
     void train(Model& model,
-               const std::vector<Batch>& data,
+               Dataset& dataset,
                int epochs,
                float lr);
 };
